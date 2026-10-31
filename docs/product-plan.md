@@ -30,4 +30,8 @@ H5 目前将历史和偏好保存在浏览器 localStorage。安装版处于独�
 
 ## 当前实现状态
 
-已在 GitHub 根目录添加 Capacitor 配置、网页资源复制脚本、iOS/Android 依赖、Actions 构建工作流、仓库首页说明和数据迁移说明。手机代码更新时触发自动构建。正式 iPhone 发布尚未完成：需要 Apple Developer 账号、签名证书/配置与 TestFlight 或 App Store Connect 提交。现有记录尚未迁移到安装版。
+- 已在 GitHub 根目录加入 Capacitor 配置、网页资源复制脚本、iOS/Android 依赖、Actions 构建工作流、仓库说明和数据迁移说明。
+- GitHub Actions 构建运行 [41230809428](https://github.com/200611lxzys/lunch-menu-app/actions/runs/41230809428) 已成功：生成 Android Debug APK 与 iOS 模拟器包。APK 可供 Android 测试；iOS 模拟器包不能安装到 iPhone。
+- 手机代码更新会触发构建；可在 Actions 下载构建产物。
+- 正式 iPhone 发布尚未完成：需要账户持有人完成 Apple Developer Program 注册/协议/付款，然后用其签名凭据生成可提交 App Store Connect 的真机构建并走 TestFlight 分发。
+- 现有网页历史尚未迁移到安装版，长期使用前需增加导入或云同步。
