@@ -11,7 +11,7 @@
 
 ## 代码与构建
 
-根目录的 `index.html` 是唯一网页源码。运行 `npm run cap:sync` 会将网页、图标、清单和离线缓存文件复制到 `www/`，再同步到原生工程。生成目录 `www/`、`ios/`、`android/` 不提交到仓库；每台构建机可从 GitHub 重新生成。
+根目录的 `index.html` 是唯一网页源码。运行 `npm run cap:sync` 会将网页、图标、清单和离线缓存文件复制到 `www/`，再同步到原生工程。`www/` 是构建生成文件，不提交；首次生成后，`ios/` 和 `android/` 原生工程源码应提交到同一个 GitHub 仓库，以保留应用配置和原生改动。
 
 ### 本机首次生成工程
 
@@ -21,6 +21,9 @@
 npm install
 npm run cap:add:ios
 npm run cap:add:android
+git add ios android package-lock.json
+git commit -m "Add native mobile projects"
+git push
 ```
 
 网页有修改时运行：
