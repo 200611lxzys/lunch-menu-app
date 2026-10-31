@@ -1,0 +1,45 @@
+# 好好吃饭：手机 APP 封装计划
+
+## 产品决定
+
+- 当前产品是手机适配的 H5/PWA。
+- 第一版原生安装包采用 Capacitor 封装现有网页，复用菜单、营养估算、每周复盘和本地菜谱代码。
+- 网页仍作为 GitHub Pages 版本运行；手机包由同一个 GitHub 仓库构建。
+- App 名称：好好吃饭；Bundle ID：`com.lunchmenu.haohaochifan`。
+- 第一阶段目标为 iPhone 内测；Android 工程也保留，方便后续生成安装包。
+- DeepSeek API 密钥只留在 Cloudflare Worker，不写入网页或安装包。
+
+## 代码与构建
+
+根目录的 `index.html` 是唯一网页源码。运行 `npm run cap:sync` 会将网页、图标、清单和离线缓存文件复制到 `www/`，再同步到原生工程。生成目录 `www/`、`ios/`、`android/` 不提交到仓库；每台构建机可从 GitHub 重新生成。
+
+### 本机首次生成工程
+
+需要 Node.js 22 或更新版本。
+
+```sh
+npm install
+npm run cap:add:ios
+npm run cap:add:android
+```
+
+网页有修改时运行：
+
+```sh
+npm run cap:sync
+```
+
+iOS 构建需要 macOS 和 Xcode；Android 构建需要 Android Studio 与 Android SDK。工作流 `Build mobile apps` 可在 GitHub Actions 中手动运行，生成 iOS 模拟器构建和 Android Debug APK 供内测。iPhone 真机安装、TestFlight 或 App Store 发布仍需 Apple 签名配置；模拟器包不能直接安装到 iPhone。
+
+## 历史数据与迁移
+
+现有 H5 用浏览器 `localStorage` 保存首次使用日期、菜单历史和设置。Capacitor 安装版运行在独立的应用沙盒中，因此 Safari 网页与安装版的本地记录默认互相不可见。
+
+在家庭成员开始长期使用安装版前，需要实现并确认数据迁移路径：至少提供网页记录导出、安装版导入；若要跨设备和多人共享，则进一步接入有身份验证的云端数据库。不要假设重打包后历史记录会自动跟随。
+
+## 尚未完成
+
+- 生成原生平台工程并取得真实构建产物。
+- 在 iPhone 真机测试布局、存储和离线行为。
+- 决定通过网页导入、云同步或两者组合迁移历史。
+- 配置 Apple 开发者签名与 TestFlight 分发。
