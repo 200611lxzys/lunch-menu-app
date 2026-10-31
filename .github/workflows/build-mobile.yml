@@ -2,6 +2,17 @@ name: Build mobile apps
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - package.json
+      - package-lock.json
+      - capacitor.config.ts
+      - scripts/**
+      - android/**
+      - ios/**
+      - .github/workflows/build-mobile.yml
 
 jobs:
   android:
