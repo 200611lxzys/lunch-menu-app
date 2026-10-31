@@ -1,6 +1,8 @@
 node_modules/
 www/
-android/
-ios/
 .DS_Store
 *.xcuserstate
+android/.gradle/
+android/**/build/
+ios/DerivedData/
+ios/build/
