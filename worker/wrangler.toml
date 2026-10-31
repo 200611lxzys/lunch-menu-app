@@ -1,0 +1,15 @@
+name = "haohchifan-menu-api"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://200611lxzys.github.io"
+
+[[ratelimits]]
+name = "AI_RATE_LIMITER"
+namespace_id = "920260001"
+
+[ratelimits.simple]
+limit = 12
+period = 60
