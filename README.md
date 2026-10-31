@@ -19,11 +19,9 @@ https://200611lxzys.github.io/lunch-menu-app/
 
 ## GitHub Actions 构建
 
-1. 打开本仓库的 **Actions**。
-2. 选择 **Build mobile apps**，点击 **Run workflow**。
-3. 等构建完成后打开该次运行页面，在 **Artifacts** 下载文件。
+手机相关代码更新到 main 后会自动构建。也可以在本仓库 **Actions → Build mobile apps → Run workflow** 手动构建。构建完成后，打开该次运行页面，在 **Artifacts** 下载产物。
 
-Android 会生成 Debug APK，可用于测试安装。iOS 当前工作流产物是模拟器构建，不能安装到 iPhone 真机。真机安装与 TestFlight 需要 Apple 签名设置。
+Android 会生成 Debug APK，可用于测试安装。iOS 当前产物是模拟器构建，不能安装到 iPhone 真机。真机安装与 TestFlight 需要 Apple 签名设置。
 
 ## 数据注意
 
