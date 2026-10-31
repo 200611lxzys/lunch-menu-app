@@ -1,0 +1,22 @@
+{
+  "name": "haohaochifan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "好好吃饭 mobile app built from the existing H5",
+  "scripts": {
+    "copy:web": "node scripts/copy-web-assets.mjs",
+    "cap:add:ios": "npm run copy:web && cap add ios",
+    "cap:add:android": "npm run copy:web && cap add android",
+    "cap:sync": "npm run copy:web && cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/android": "^8.0.0"
+  }
+}
