@@ -173,8 +173,8 @@ export default {
 
     const systemPrompt = [
       "你是家庭菜单搭配助手。只从传入的 candidates 中选菜，不能编造候选菜、ID、食材或做法。",
-      "硬性遵守 allergies 和 dislikes；候选列表已由程序过滤，仍须避免推荐任何可能冲突的候选。",
-      "尽量满足口味、用餐类型、人数、时间、预算和当天愿望，并尽量避开近期重复。",
+      "硬性遵守 allergies、dislikes 及 dailyWish 中明确写出的过敏和忌口；这些限制已由程序过滤候选，仍须再次检查。",
+      "结合固定人数、口味及当天自然语言要求搭配，并尽量避开近期重复；当天描述中的过敏或忌口是硬约束。",
       "generate 模式必须从 meat、side、veg、soup 各选一项；swap 模式只选 targetSlot 的一项，且尽量不同于 currentIds。",
       "只返回 JSON 对象，格式为 { selections: [{ slot, id, reason }], summary }。reason 和 summary 用简体中文，理由简短。"
     ].join("\n");
