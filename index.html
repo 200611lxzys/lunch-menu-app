@@ -48,7 +48,7 @@ function exportBackup(){
   a.href=url;a.download='haohchifan-backup-'+todayKey+'.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);toast('菜单历史备份已导出')
 }
-function validDateKey(value){if(typeof value!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return false;const date=new Date(value+'T12:00:00');return !Number.isNaN(date.getTime())&&keyDate(date)===value}
+function validDateKey(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;const date=new Date(value+'T12:00:00');return !Number.isNaN(date.getTime())&&keyDate(date)===value}
 function safeBackup(backup){
   if(!backup||backup.format!=='haohchifan-backup'||backup.version!==1||!backup.data||typeof backup.data!=='object')throw new Error('这不是好好吃饭支持的备份文件');
   const data=backup.data,firstDate=data.first;
