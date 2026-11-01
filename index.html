@@ -110,9 +110,16 @@ function safeBackup(backup){
     if(date<=todayKey)plans[date]=plan;
   }
   const raw=data.settings&&typeof data.settings==='object'?data.settings:{};
-  const settings={mealType:['any','lunch','dinner'].includes(raw.mealType)?raw.mealType:'any',servings:Math.max(1,Math.min(12,Number(raw.servings)||2)),taste:String(raw.taste||'').slice(0,200),maxMinutes:String(raw.maxMinutes||'').slice(0,3),budget:String(raw.budget||'').slice(0,100),availableIngredients:String(raw.availableIngredients||'').slice(0,500),allergies:String(raw.allergies||'').slice(0,300),dislikes:String(raw.dislikes||'').slice(0,300)};
   const wishes={};
   if(data.wishes&&typeof data.wishes==='object'&&!Array.isArray(data.wishes))for(const [date,wish] of Object.entries(data.wishes)){if(validDateKey(date)&&date>=firstDate&&date<=todayKey)wishes[date]=String(wish||'').slice(0,500)}
+  const legacy=[];
+  if(raw.mealType==='lunch')legacy.push('今天按午餐准备');if(raw.mealType==='dinner')legacy.push('今天按晚餐准备');
+  if(raw.maxMinutes)legacy.push('尽量在'+raw.maxMinutes+'分钟内做好');if(raw.budget)legacy.push('预算：'+raw.budget);
+  if(raw.availableIngredients)legacy.push('优先使用家里现有食材：'+raw.availableIngredients);
+  if(raw.allergies)legacy.push('过敏食材：'+raw.allergies);if(raw.dislikes)legacy.push('不喜欢或不吃：'+raw.dislikes);
+  const otherPrefs=String(raw.otherPrefs||'').slice(0,500)||[wishes[todayKey]||'',...legacy].filter(Boolean).join('；').slice(0,500);
+  if(otherPrefs)wishes[todayKey]=otherPrefs;
+  const settings={servings:Math.max(1,Math.min(12,Number(raw.servings)||2)),taste:String(raw.taste||'').slice(0,200),otherPrefs};
   const aiInfo={};
   if(data.aiInfo&&typeof data.aiInfo==='object'&&!Array.isArray(data.aiInfo))for(const [date,info] of Object.entries(data.aiInfo)){if(validDateKey(date)&&date>=firstDate&&date<=todayKey&&info&&typeof info==='object')aiInfo[date]={model:String(info.model||'').slice(0,60),summary:String(info.summary||'').slice(0,240),reasons:info.reasons&&typeof info.reasons==='object'?info.reasons:{}}}
   return {first:firstDate,plans,settings,wishes,aiInfo}
