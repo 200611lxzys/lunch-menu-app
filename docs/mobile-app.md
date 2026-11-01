@@ -46,3 +46,10 @@ iOS 构建需要 macOS 和 Xcode；Android 构建需要 Android Studio 与 Andro
 - 在 iPhone 真机测试布局、存储和离线行为。
 - 决定通过网页导入、云同步或两者组合迁移历史。
 - 配置 Apple 开发者签名与 TestFlight 分发。
+
+
+## 当前第一期 MVP 决策（2026-11-01）
+
+网页 PWA 与 Capacitor 封装版并行推进，不互相替代。两者从同一仓库发布，共用菜单和周报业务代码；网页继续由 GitHub Pages 提供，封装版由 GitHub Actions 构建。第一期重点是两端核心功能一致、iPhone 真机测试及本机历史迁移说明。
+
+第一期不包含每日推送。封装版推送需要后续单独设计原生 iOS/APNs 能力；PWA Web Push 也暂不实现。不要在当前 MVP 中请求通知权限或声称已提供每日推送。
