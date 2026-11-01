@@ -2,7 +2,7 @@
 
 ## 产品决定
 
-- 当前产品是手机适配的 H5/PWA。
+- 第一阶段并行维护手机适配的 H5/PWA 与 Capacitor 封装版。
 - 第一版原生安装包采用 Capacitor 封装现有网页，复用菜单、营养估算、每周复盘和本地菜谱代码。
 - 网页仍作为 GitHub Pages 版本运行；手机包由同一个 GitHub 仓库构建。
 - App 名称：好好吃饭；Bundle ID：`com.lunchmenu.haohaochifan`。
@@ -50,7 +50,7 @@ iOS 构建需要 macOS 和 Xcode；Android 构建需要 Android Studio 与 Andro
 
 ## 当前第一期 MVP 决策（2026-11-01）
 
-网页 PWA 与 Capacitor 封装版并行推进，不互相替代。两者从同一仓库发布，共用菜单和周报业务代码；网页继续由 GitHub Pages 提供，封装版由 GitHub Actions 构建。第一期重点是两端核心功能一致、iPhone 真机测试及本机历史迁移说明。
+网页 PWA 与 Capacitor 封装版并行推进，不互相替代。两者从同一仓库发布，共用菜单和周报业务代码；网页继续由 GitHub Pages 提供，封装版由 GitHub Actions 构建。第一期重点是两端核心功能一致、iPhone 真机测试及通过 JSON 文件手动迁移本机历史。
 
 第一期不包含每日推送。封装版推送需要后续单独设计原生 iOS/APNs 能力；PWA Web Push 也暂不实现。不要在当前 MVP 中请求通知权限或声称已提供每日推送。
 
