@@ -74,6 +74,11 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://200611lxzys.github.io";
+    // Health is intentionally readable without an Origin header so it can be checked
+    // directly in a browser or with curl. It only reveals whether a key is configured.
+    if (request.method === "GET" && url.pathname === "/health") {
+      return responseJson({ ok: true, model: "deepseek-flash", configured: Boolean(env.DEEPSEEK_API_KEY) }, 200, origin === allowedOrigin ? allowedOrigin : "");
+    }
     if (origin !== allowedOrigin) return new Response("Origin not allowed", { status: 403 });
 
     if (request.method === "OPTIONS") {
@@ -89,9 +94,6 @@ export default {
       });
     }
 
-    if (request.method === "GET" && url.pathname === "/health") {
-      return responseJson({ ok: true, model: "deepseek-flash", configured: Boolean(env.DEEPSEEK_API_KEY) }, 200, allowedOrigin);
-    }
     if (request.method !== "POST" || url.pathname !== "/api/menu") {
       return responseJson({ error: "Not found" }, 404, allowedOrigin);
     }
