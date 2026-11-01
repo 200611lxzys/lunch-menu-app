@@ -22,6 +22,7 @@ function splitTerms(value) {
 }
 
 const ALIASES = {
+  "辣": ["辣椒", "干辣椒", "小米辣", "辣椒油", "豆瓣酱"],
   "虾": ["虾", "虾仁", "虾皮", "shrimp", "prawn"],
   "贝类": ["贝", "蛤", "蚝", "牡蛎", "生蚝", "蛏", "贻贝", "扇贝", "shellfish"],
   "海鲜": ["虾", "蟹", "贝", "鱼", "鱿鱼", "海鲜", "shrimp", "fish", "shellfish"],
