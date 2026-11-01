@@ -96,7 +96,7 @@ export default {
     }
 
     if (url.pathname === "/api/push/config" && request.method === "GET") {
-      return responseJson({ enabled: Boolean(env.PUSH_DB && env.VAPID_PUBLIC_KEY), publicKey: env.VAPID_PUBLIC_KEY || "" }, 200, allowedOrigin);
+      return responseJson({ enabled: Boolean(env.PUSH_DB && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT), publicKey: env.VAPID_PUBLIC_KEY || "" }, 200, allowedOrigin);
     }
 
     if (url.pathname === "/api/push/subscribe" && request.method === "POST") {
