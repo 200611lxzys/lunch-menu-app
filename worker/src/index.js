@@ -66,13 +66,13 @@ function containsForbidden(candidate, terms) {
 function extractNaturalRestrictions(text) {
   const source = safeText(text, 500);
   const phrases = [];
-  const avoid = /(?:不吃|不喜欢|忌口|避免|不要|不加|不放|少放|过敏(?:于|是)?|不耐受(?:于|是)?)\\s*([^，。；;！？!?\\n]+)/g;
+  const avoid = /(?:不吃|不喜欢|忌口|避免|不要|不加|不放|少放|过敏(?:于|是)?|不耐受(?:于|是)?)\s*([^，。；;！？!?\n]+)/g;
   for (const match of source.matchAll(avoid)) phrases.push(match[1]);
-  const suffix = /([\\u4e00-\\u9fffA-Za-z]{1,12})(?:过敏|不耐受)/g;
+  const suffix = /([\u4e00-\u9fffA-Za-z]{1,12})(?:过敏|不耐受)/g;
   for (const match of source.matchAll(suffix)) phrases.push(match[1]);
   return phrases.flatMap(phrase => phrase
     .replace(/^(?:请|我|家人|对|有|添加|放入|加入|食用|吃|喝)+/g, "")
-    .split(/(?:、|，|,|和|与|以及|及|或|\\s)+/)
+    .split(/(?:、|，|,|和|与|以及|及|或|\s)+/)
     .map(term => term.replace(/(?:食材|食品|成分|都|任何|东西|之类)$/g, "").trim())
     .filter(term => term.length >= 1 && term.length <= 16));
 }
@@ -137,7 +137,8 @@ export default {
     const preferences = body.preferences && typeof body.preferences === "object" ? body.preferences : {};
     const forbidden = expandTerms([
       ...splitTerms(preferences.allergies),
-      ...splitTerms(preferences.dislikes)
+      ...splitTerms(preferences.dislikes),
+      ...extractNaturalRestrictions(body.dailyWish)
     ]);
     const candidates = (Array.isArray(body.candidates) ? body.candidates : [])
       .map(cleanCandidate).filter(Boolean).slice(0, 32)
