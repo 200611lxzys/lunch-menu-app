@@ -87,7 +87,7 @@ export default {
         status: 204,
         headers: {
           "access-control-allow-origin": allowedOrigin,
-          "access-control-allow-methods": "POST, GET, OPTIONS",
+          "access-control-allow-methods": "POST, GET, DELETE, OPTIONS",
           "access-control-allow-headers": "content-type",
           "access-control-max-age": "86400",
           "vary": "Origin"
@@ -100,6 +100,7 @@ export default {
     }
 
     if (url.pathname === "/api/push/subscribe" && request.method === "POST") {
+      if (Number(request.headers.get("content-length") || 0) > 10000) return responseJson({ error: "订阅内容过大" }, 413, allowedOrigin);
       if (!env.PUSH_DB || !env.VAPID_PUBLIC_KEY) return responseJson({ error: "推送服务尚未配置" }, 503, allowedOrigin);
       let body;
       try { body = await request.json(); } catch { return responseJson({ error: "请求不是有效 JSON" }, 400, allowedOrigin); }
