@@ -13,3 +13,12 @@ namespace_id = "920260001"
 [ratelimits.simple]
 limit = 12
 period = 60
+
+[[d1_databases]]
+binding = "PUSH_DB"
+database_name = "haohchifan-push"
+database_id = "SET_AFTER_CREATING_D1"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["0 * * * *"]
