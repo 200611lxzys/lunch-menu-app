@@ -1,4 +1,3 @@
-import { sendPushNotification } from "@mmmike/web-push/send";
 const SLOTS = ["meat", "side", "veg", "soup"];
 const SLOT_LABELS = { meat: "荤菜", side: "家常菜", veg: "蔬菜", soup: "汤品" };
 
@@ -8,7 +7,7 @@ function responseJson(data, status, origin) {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": origin,
-      "access-control-allow-methods": "POST, GET, DELETE, OPTIONS",
+      "access-control-allow-methods": "POST, GET, OPTIONS",
       "access-control-allow-headers": "content-type",
       "access-control-max-age": "86400",
       "vary": "Origin",
@@ -87,46 +86,12 @@ export default {
         status: 204,
         headers: {
           "access-control-allow-origin": allowedOrigin,
-          "access-control-allow-methods": "POST, GET, DELETE, OPTIONS",
+          "access-control-allow-methods": "POST, GET, OPTIONS",
           "access-control-allow-headers": "content-type",
           "access-control-max-age": "86400",
           "vary": "Origin"
         }
       });
-    }
-
-    if (url.pathname === "/api/push/config" && request.method === "GET") {
-      return responseJson({ enabled: Boolean(env.PUSH_DB && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT), publicKey: env.VAPID_PUBLIC_KEY || "" }, 200, allowedOrigin);
-    }
-
-    if (url.pathname === "/api/push/subscribe" && request.method === "POST") {
-      if (Number(request.headers.get("content-length") || 0) > 10000) return responseJson({ error: "订阅内容过大" }, 413, allowedOrigin);
-      if (!env.PUSH_DB || !env.VAPID_PUBLIC_KEY) return responseJson({ error: "推送服务尚未配置" }, 503, allowedOrigin);
-      let body;
-      try { body = await request.json(); } catch { return responseJson({ error: "请求不是有效 JSON" }, 400, allowedOrigin); }
-      const sub = body.subscription;
-      if (!sub || typeof sub.endpoint !== "string" || !sub.endpoint.startsWith("https://") ||
-          sub.endpoint.length > 2048 || !sub.keys?.p256dh || !sub.keys?.auth) {
-        return responseJson({ error: "推送订阅信息无效" }, 400, allowedOrigin);
-      }
-      const timeZone = safeText(body.timeZone || "Asia/Shanghai", 80);
-      const sendHour = Math.max(0, Math.min(23, Number(body.sendHour) || 8));
-      try { new Intl.DateTimeFormat("en", { timeZone }).format(new Date()); }
-      catch { return responseJson({ error: "时区设置无效" }, 400, allowedOrigin); }
-      await env.PUSH_DB.prepare(
-        "INSERT INTO push_subscriptions (endpoint, subscription_json, time_zone, send_hour, created_at, last_sent_local_date) VALUES (?, ?, ?, ?, ?, NULL) ON CONFLICT(endpoint) DO UPDATE SET subscription_json=excluded.subscription_json, time_zone=excluded.time_zone, send_hour=excluded.send_hour"
-      ).bind(sub.endpoint, JSON.stringify(sub), timeZone, sendHour, new Date().toISOString()).run();
-      return responseJson({ ok: true }, 200, allowedOrigin);
-    }
-
-    if (url.pathname === "/api/push/subscribe" && request.method === "DELETE") {
-      if (!env.PUSH_DB) return responseJson({ error: "推送服务尚未配置" }, 503, allowedOrigin);
-      let body;
-      try { body = await request.json(); } catch { return responseJson({ error: "请求不是有效 JSON" }, 400, allowedOrigin); }
-      const endpoint = typeof body.endpoint === "string" && body.endpoint.startsWith("https://") ? body.endpoint.slice(0, 2048) : "";
-      if (!endpoint) return responseJson({ error: "订阅地址无效" }, 400, allowedOrigin);
-      await env.PUSH_DB.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").bind(endpoint).run();
-      return responseJson({ ok: true }, 200, allowedOrigin);
     }
 
     if (request.method !== "POST" || url.pathname !== "/api/menu") {
@@ -269,43 +234,5 @@ export default {
       selections: sanitized,
       summary: safeText(modelResult.summary, 240)
     }, 200, allowedOrigin);
-  },
-  async scheduled(controller, env) {
-    if (!env.PUSH_DB || !env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !env.VAPID_SUBJECT) return;
-    const { results = [] } = await env.PUSH_DB.prepare(
-      "SELECT endpoint, subscription_json, time_zone, send_hour, last_sent_local_date FROM push_subscriptions"
-    ).all();
-    for (const row of results) {
-      let parts;
-      try {
-        parts = new Intl.DateTimeFormat("en-CA", {
-          timeZone: row.time_zone,
-          year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit",
-          hourCycle: "h23"
-        }).formatToParts(new Date(controller.scheduledTime));
-      } catch { continue; }
-      const part = Object.fromEntries(parts.map(item => [item.type, item.value]));
-      const localDate = `${part.year}-${part.month}-${part.day}`;
-      if (Number(part.hour) !== Number(row.send_hour) || row.last_sent_local_date === localDate) continue;
-      try {
-        const subscription = JSON.parse(row.subscription_json);
-        const sent = await sendPushNotification(subscription, {
-          title: "好好吃饭 · 今日菜单",
-          body: "今天的四道菜已准备好，点开查看食材和下厨步骤。",
-          url: "https://200611lxzys.github.io/lunch-menu-app/"
-        }, {
-          publicKey: env.VAPID_PUBLIC_KEY,
-          privateKey: env.VAPID_PRIVATE_KEY,
-          subject: env.VAPID_SUBJECT
-        });
-        if (!sent) {
-          await env.PUSH_DB.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").bind(row.endpoint).run();
-          continue;
-        }
-        await env.PUSH_DB.prepare("UPDATE push_subscriptions SET last_sent_local_date = ? WHERE endpoint = ?").bind(localDate, row.endpoint).run();
-      } catch (error) {
-        console.error("Push delivery failed; subscription retained for retry.", String(error?.message || error).slice(0, 160));
-      }
-    }
   }
 };
