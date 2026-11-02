@@ -369,4 +369,5 @@ H5 将历史和偏好保存在当前运行环境的 localStorage；浏览器、P
 
 - 用户反馈 iPhone 页面可打开，但菜品配图没有显示。
 - 四类照片以 JPEG 嵌入 SVG；SVG 图像引用改为 `xlink:href` 并声明对应命名空间，提升旧版 iPhone Safari/WebKit 的兼容性，照片数据和页面图片路径保持不变。
-- GitHub Pages 自动发布完成后，在 iPhone 重新加载页面确认图片显示。
+- 图片区域改用标准 `<img>` 元素并裁切菜品拼图，避免依赖 iPhone 对 SVG CSS 背景的处理。
+- GitHub Pages 发布完成后，在 iPhone 重新加载页面确认图片显示。
