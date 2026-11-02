@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<title>好好吃饭 · 手机自检</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#f5f5f7;color:#1d1d1f;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{max-width:520px;margin:20px auto;padding:24px;border-radius:22px;background:#fff;box-shadow:0 8px 28px #00000010}h1{font-size:22px;margin:0 0 8px}p{color:#6e6e73}.row{padding:12px 0;border-bottom:1px solid #eee}.good{color:#087a33}.bad{color:#b42318}button,a{display:block;width:100%;margin-top:12px;padding:14px;border:0;border-radius:13px;background:#0071e3;color:#fff;text-align:center;text-decoration:none;font:inherit;font-weight:650}#tap{background:#1d1d1f}.small{font-size:13px;color:#6e6e73}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>好好吃饭 · 手机自检</h1>
+<p>这个页面只检测 iPhone 能否接收点击、网页脚本和本地存储，不会读取或清除菜单内容。</p>
+<div class="row" id="js">网页脚本：正在检查</div>
+<div class="row" id="storage">本机存储：正在检查</div>
+<div class="row" id="sw">离线缓存：正在检查</div>
+<div class="row" id="tapResult">点击测试：还没测试</div>
+<button id="tap">点这里测试点击</button>
+<button id="inspect">刷新检查结果</button>
+<a href="./?v=20261102-diagnostic">打开好好吃饭</a>
+<p class="small">自检版本：2026-11-02 · diagnostic-1</p>
+</main>
+<script>
+const set=(id,text,ok)=>{const el=document.getElementById(id);el.textContent=text;el.className='row '+(ok?'good':'bad')};
+set('js','网页脚本：正常运行',true);
+let taps=0;
+document.getElementById('tap').addEventListener('click',()=>{taps++;set('tapResult','点击测试：成功，收到 '+taps+' 次点击',true)});
+async function inspect(){
+ try{localStorage.getItem('haohchifan_v2');set('storage','本机存储：可读写能力可用（不会改动菜单数据）',true)}
+ catch(e){set('storage','本机存储：不可用 · '+e.message,false)}
+ try{const registrations='serviceWorker'in navigator?await navigator.serviceWorker.getRegistrations():[];const controller=navigator.serviceWorker?.controller;const cachesList='caches'in window?await caches.keys():[];set('sw','离线缓存：'+(controller?'已启用':'当前未控制页面')+'；缓存 '+cachesList.filter(x=>x.startsWith('lunch-menu-')).join(', ')+'；注册 '+registrations.length,true)}
+ catch(e){set('sw','离线缓存检查失败 · '+e.message,false)}
+}
+document.getElementById('inspect').addEventListener('click',inspect);
+window.addEventListener('error',e=>set('js','网页脚本报错：'+(e.message||e.error?.message||'未知错误'),false));
+inspect();
+</script>
+</body>
+</html>
