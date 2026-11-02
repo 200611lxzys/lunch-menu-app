@@ -154,7 +154,7 @@ $('#backupFile').onchange=async event=>{
     save();toast('菜单历史已导入');setTimeout(()=>location.reload(),350)
   }catch(error){toast(error.message||'备份文件无法读取')}
 };
-loadPrefs();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{const key='haohchifan-sw-reloaded:'+navigator.serviceWorker.controller?.scriptURL;try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1')}catch{}location.reload()});navigator.serviceWorker.addEventListener('message',event=>{if(event.data?.type==='APP_UPDATED'){const editing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);if(editing){toast('发现页面更新，请先保存设置后重新打开')}else location.reload()}});window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=20261102').then(reg=>reg.update()).catch(()=>{}))}update();maybeAutoRecommendToday();
+loadPrefs();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.filter(reg=>reg.scope===new URL('./',location.href).href).map(reg=>reg.unregister()))).catch(()=>{}));update();maybeAutoRecommendToday();
 </script></body></html>
 
 
