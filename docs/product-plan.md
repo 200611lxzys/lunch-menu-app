@@ -314,3 +314,13 @@ H5 将历史和偏好保存在当前运行环境的 localStorage；浏览器、P
 - 若桌面图标仍加载旧页面，提供 `refresh.html` 修复入口：只注销本应用路径下的 Service Worker，并删除名称以 `lunch-menu-` 开头的页面缓存，再跳回最新版。
 - 修复入口不得清理 `localStorage`，因此不删除菜单历史、首次使用日期、饮食设置或 AI 试用计数。
 - Service Worker 缓存版本升至 v8。桌面快捷方式更新仍需联网后重新打开；Capacitor 独立安装包需重新安装构建产物。
+
+
+## 19. iPhone 家庭内测安装包（2026-11-02）
+
+- 用户确认妻子使用 iPhone，并希望直接安装手机 App。
+- 采用 TestFlight 分发，不把 iOS 模拟器包当作真机安装包。仓库已新增 `.github/workflows/ios-testflight.yml`：在 GitHub macOS runner 上生成签名 IPA、保留 14 天构建产物并上传 App Store Connect。
+- 运行前置条件：Apple Developer Program 账户有效；App Store Connect 已创建 Bundle ID `com.lunchmenu.haohaochifan` 的应用记录；证书、App Store provisioning profile、App Store Connect API key 已配置到 GitHub Actions Variables/Secrets。
+- 构建上传后，App Store Connect 还需处理构建并配置 TestFlight 测试信息/测试组。妻子通过 TestFlight 邀请安装，后续同应用更新走 TestFlight。
+- 签名密钥只存 GitHub Actions Secrets；不在仓库、网页或聊天中保存。当前仍待账户持有人完成 Apple 账户和 GitHub Secrets 配置。
+- 详细逐步说明见 [手机 APP 封装计划](mobile-app.md#iphone-家庭内测testflight)。
