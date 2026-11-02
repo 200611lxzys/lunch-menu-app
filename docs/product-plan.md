@@ -324,3 +324,11 @@ H5 将历史和偏好保存在当前运行环境的 localStorage；浏览器、P
 - 构建上传后，App Store Connect 还需处理构建并配置 TestFlight 测试信息/测试组。妻子通过 TestFlight 邀请安装，后续同应用更新走 TestFlight。
 - 签名密钥只存 GitHub Actions Secrets；不在仓库、网页或聊天中保存。当前仍待账户持有人完成 Apple 账户和 GitHub Secrets 配置。
 - 详细逐步说明见 [手机 APP 封装计划](mobile-app.md#iphone-家庭内测testflight)。
+
+
+## 20. iPhone 主屏幕版持续无法点击的更新修复（2026-11-02）
+
+- 用户反馈 iPhone 主屏幕图标打开后按钮仍无响应；当前线上脚本语法检查通过，重点处理旧 Service Worker 继续提供旧页面的问题。
+- Service Worker 页面缓存升至 v9；导航请求绕过浏览器 HTTP 缓存并优先取线上最新页面，离线时仍保留缓存回退。
+- 页面启动时注册带版本号的 Service Worker 并主动检查更新；新 Worker 接管后自动刷新一次页面，避免继续停留在旧脚本。
+- 更新不卸载主屏幕图标、不清空 localStorage，菜单历史、设置和试用次数保留。若升级后仍失灵，使用 Safari 打开修复入口并重新从原主屏幕图标启动；不要删除主屏幕 App，以免 iOS 清除其本机数据。
