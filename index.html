@@ -137,7 +137,7 @@ $('#backupFile').onchange=async event=>{
     save();toast('菜单历史已导入');setTimeout(()=>location.reload(),350)
   }catch(error){toast(error.message||'备份文件无法读取')}
 };
-loadPrefs();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));update();maybeAutoRecommendToday();
+loadPrefs();if('serviceWorker'in navigator){let reloadedAfterWorkerUpdate=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloadedAfterWorkerUpdate)return;reloadedAfterWorkerUpdate=true;try{if(sessionStorage.getItem('haohchifan-sw-reloaded'))return;sessionStorage.setItem('haohchifan-sw-reloaded','1')}catch{}location.reload()});window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=20261102').then(reg=>reg.update()).catch(()=>{}))}update();maybeAutoRecommendToday();
 </script></body></html>
 
 
