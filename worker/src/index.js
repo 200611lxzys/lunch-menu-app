@@ -196,7 +196,8 @@ export default {
           ],
           response_format: { type: "json_object" },
           temperature: 0.25,
-          max_tokens: 1200
+          thinking: { type: "disabled" },
+          max_tokens: 600
         }),
         signal: AbortSignal.timeout(25000)
       });
