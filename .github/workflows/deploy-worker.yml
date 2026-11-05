@@ -1,0 +1,36 @@
+name: Deploy Cloudflare Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - worker/**
+      - .github/workflows/deploy-worker.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy haohchifan-menu-api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error title=Missing Cloudflare token::Add CLOUDFLARE_API_TOKEN as a repository Actions secret, then rerun this workflow."
+            exit 1
+          fi
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ab2ed2255ed6468041c67f074fc2acfa
+          workingDirectory: worker
+          command: deploy
