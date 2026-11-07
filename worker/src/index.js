@@ -123,7 +123,7 @@ export default {
     }
 
     const contentLength = Number(request.headers.get("content-length") || 0);
-    if (contentLength > 60000) return responseJson({ error: "请求内容过大" }, 413, allowedOrigin);
+    if (contentLength > 200000) return responseJson({ error: "请求内容过大" }, 413, allowedOrigin);
 
     let body;
     try { body = await request.json(); }
@@ -142,7 +142,7 @@ export default {
       ...extractNaturalRestrictions(body.dailyWish)
     ]);
     const candidates = (Array.isArray(body.candidates) ? body.candidates : [])
-      .map(cleanCandidate).filter(Boolean).slice(0, 32)
+      .map(cleanCandidate).filter(Boolean).slice(0, 128)
       .filter(item => mode !== "swap" || item.slot === targetSlot)
       .filter(item => !containsForbidden(item, forbidden));
     const currentIds = Array.isArray(body.currentIds) ? body.currentIds.map(String) : [];
