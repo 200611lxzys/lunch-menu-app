@@ -250,7 +250,7 @@ export default {
     }));
     return responseJson({
       ok: true,
-      model: "deepseek-flash",
+      model,
       selections: sanitized,
       summary: safeText(modelResult.summary, 240)
     }, 200, allowedOrigin);
