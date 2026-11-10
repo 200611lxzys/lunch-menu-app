@@ -1,4 +1,4 @@
-const SLOTS = ["meat", "side", "veg", "soup"];
+const LEGACY_SLOTS = ["meat", "side", "veg", "soup"];
 const SLOT_LABELS = { meat: "荤菜", side: "家常菜", veg: "蔬菜", soup: "汤品" };
 
 function responseJson(data, status, origin) {
@@ -55,7 +55,7 @@ function cleanCandidate(item) {
   const name = safeText(item.name, 100);
   const ingredients = safeText(item.ingredients, 800);
   const steps = safeText(item.steps, 1200);
-  if (!id || !SLOTS.includes(slot) || !name || !ingredients) return null;
+  if (!id || ![...LEGACY_SLOTS, "mixed1", "mixed2"].includes(slot) || !name || !ingredients) return null;
   return { id, slot, name, ingredients, steps };
 }
 
@@ -87,12 +87,14 @@ function parseModelJson(text) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const useOpenAI = Boolean(env.OPENAI_API_KEY);
+    const model = useOpenAI ? (env.OPENAI_MODEL || "gpt-5.4-mini") : "deepseek-flash";
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://200611lxzys.github.io";
     // Health is intentionally readable without an Origin header so it can be checked
     // directly in a browser or with curl. It only reveals whether a key is configured.
     if (request.method === "GET" && url.pathname === "/health") {
-      return responseJson({ ok: true, model: "deepseek-flash", configured: Boolean(env.DEEPSEEK_API_KEY) }, 200, origin === allowedOrigin ? allowedOrigin : "");
+      return responseJson({ ok: true, model, configured: Boolean(env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY) }, 200, origin === allowedOrigin ? allowedOrigin : "");
     }
     if (origin !== allowedOrigin) return new Response("Origin not allowed", { status: 403 });
 
@@ -112,8 +114,8 @@ export default {
     if (request.method !== "POST" || url.pathname !== "/api/menu") {
       return responseJson({ error: "Not found" }, 404, allowedOrigin);
     }
-    if (!env.DEEPSEEK_API_KEY) {
-      return responseJson({ error: "服务端尚未配置 DeepSeek API Key" }, 503, allowedOrigin);
+    if (!env.OPENAI_API_KEY && !env.DEEPSEEK_API_KEY) {
+      return responseJson({ error: "服务端尚未配置模型 API Key" }, 503, allowedOrigin);
     }
 
     if (env.AI_RATE_LIMITER) {
@@ -129,6 +131,7 @@ export default {
     try { body = await request.json(); }
     catch { return responseJson({ error: "请求不是有效 JSON" }, 400, allowedOrigin); }
 
+    const SLOTS = body.layout === "no-soup-v1" ? ["meat", "mixed1", "mixed2", "veg"] : LEGACY_SLOTS;
     const mode = body.mode === "swap" ? "swap" : body.mode === "generate" ? "generate" : "";
     const targetSlot = safeText(body.targetSlot, 20);
     if (!mode || (mode === "swap" && !SLOTS.includes(targetSlot))) {
@@ -142,7 +145,7 @@ export default {
       ...extractNaturalRestrictions(body.dailyWish)
     ]);
     const candidates = (Array.isArray(body.candidates) ? body.candidates : [])
-      .map(cleanCandidate).filter(Boolean).slice(0, 128)
+      .map(cleanCandidate).filter(item => item && SLOTS.includes(item.slot)).slice(0, 128)
       .filter(item => mode !== "swap" || item.slot === targetSlot)
       .filter(item => !containsForbidden(item, forbidden));
     const currentIds = Array.isArray(body.currentIds) ? body.currentIds.map(String) : [];
@@ -150,7 +153,7 @@ export default {
     if (mode === "generate" && SLOTS.some(slot => !candidates.some(item => item.slot === slot))) {
       return responseJson({ error: "当前菜谱库无法满足全部忌口条件，请调整设置" }, 422, allowedOrigin);
     }
-    if (mode === "swap" && !candidates.some(item => item.slot === targetSlot && item.id !== currentIds[SLOTS.indexOf(targetSlot)])) {
+    if (mode === "swap" && !candidates.some(item => item.slot === targetSlot && !currentIds.includes(item.id))) {
       return responseJson({ error: "该分类没有符合条件的替换菜，请调整设置" }, 422, allowedOrigin);
     }
 
@@ -176,28 +179,28 @@ export default {
       "你是家庭菜单搭配助手。只从传入的 candidates 中选菜，不能编造候选菜、ID、食材或做法。",
       "硬性遵守 allergies、dislikes 及 dailyWish 中明确写出的过敏和忌口；这些限制已由程序过滤候选，仍须再次检查。",
       "结合固定人数、口味及当天自然语言要求搭配，并尽量避开近期重复；当天描述中的过敏或忌口是硬约束。",
-      "generate 模式必须从 meat、side、veg、soup 各选一项；swap 模式只选 targetSlot 的一项，且尽量不同于 currentIds。",
+      `generate 模式必须从 ${SLOTS.join("、")} 各选一项，菜品 ID 不得重复。swap 模式只选 targetSlot 的一项，且不得与 currentIds 重复。`,
       "只返回 JSON 对象，格式为 { selections: [{ slot, id, reason }], summary }。reason 和 summary 用简体中文，理由简短。"
     ].join("\n");
 
     let upstream;
     try {
-      upstream = await fetch("https://api.deepseek.com/chat/completions", {
+      upstream = await fetch(useOpenAI ? "https://api.openai.com/v1/chat/completions" : "https://api.deepseek.com/chat/completions", {
         method: "POST",
         headers: {
-          "authorization": "Bearer " + env.DEEPSEEK_API_KEY,
+          "authorization": "Bearer " + (useOpenAI ? env.OPENAI_API_KEY : env.DEEPSEEK_API_KEY),
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          model: "deepseek-flash",
+          model,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: JSON.stringify(input) }
           ],
           response_format: { type: "json_object" },
-          temperature: 0.25,
-          thinking: { type: "disabled" },
-          max_tokens: 600
+          ...(useOpenAI ? { reasoning_effort: "none", max_completion_tokens: 750 } : {
+            temperature: 0.25, thinking: { type: "disabled" }, max_tokens: 600
+          })
         }),
         signal: AbortSignal.timeout(25000)
       });
@@ -217,14 +220,14 @@ export default {
       return responseJson({ error: "模型暂时没有返回可用菜单" }, 502, allowedOrigin);
     }
 
-    const byId = new Map(candidates.map(item => [item.id, item]));
+    const byId = new Map(candidates.map(item => [item.slot + "|" + item.id, item]));
     const selections = modelResult.selections;
     if (mode === "generate") {
       if (selections.length !== 4) return responseJson({ error: "模型返回菜品数量不正确" }, 502, allowedOrigin);
       const usedSlots = new Set();
       const usedIds = new Set();
       for (const selection of selections) {
-        const candidate = byId.get(String(selection.id));
+        const candidate = byId.get(selection.slot + "|" + selection.id);
         if (!candidate || candidate.slot !== selection.slot || usedSlots.has(candidate.slot) || usedIds.has(candidate.id)) {
           return responseJson({ error: "模型返回了菜谱库以外或重复的菜" }, 502, allowedOrigin);
         }
@@ -234,8 +237,8 @@ export default {
       if (SLOTS.some(slot => !usedSlots.has(slot))) return responseJson({ error: "模型没有覆盖四个菜品分类" }, 502, allowedOrigin);
     } else {
       if (selections.length !== 1) return responseJson({ error: "模型返回菜品数量不正确" }, 502, allowedOrigin);
-      const candidate = byId.get(String(selections[0].id));
-      if (!candidate || candidate.slot !== targetSlot || candidate.id === currentIds[SLOTS.indexOf(targetSlot)]) {
+      const candidate = byId.get(selections[0].slot + "|" + selections[0].id);
+      if (!candidate || candidate.slot !== targetSlot || currentIds.includes(candidate.id)) {
         return responseJson({ error: "模型返回的替换菜不符合要求" }, 502, allowedOrigin);
       }
     }
