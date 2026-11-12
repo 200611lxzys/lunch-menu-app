@@ -30,7 +30,11 @@ assert(run('Object.values(DB).flat().every(d=>d.i&&d.m)'));
 assert.equal(run('recipeId(ensure("old"),3)'),'soup:0');
 assert(run('photoFor("soup:0","旧菜单")').includes('<img '));
 assert(run('photoFor("meat:6","专属图片")').includes('/recipes-v1/meat-6.jpg'));
-assert(run('photoFor("side:26","新增菜")').includes('分类示意'));
+assert(run('photoFor("side:26","新增菜")').includes('/recipes-v2/side-26.jpg'));
+const addedPhotos=run('Object.entries(DB).flatMap(([slot,rows])=>rows.slice(originalCounts[slot]).map((dish,i)=>photoFor(slot+":"+(i+originalCounts[slot]),dish.n)))');
+assert.equal(addedPhotos.length,896);
+assert.equal(new Set(addedPhotos.map(tag=>tag.match(/src="([^"]+)"/)[1])).size,896);
+assert(addedPhotos.every(tag=>tag.includes('的食材图')));
 assert(run('Object.entries(DB).every(([slot,rows])=>rows.every((d,i)=>photoFor(slot+":"+i,d.n).includes("<img ")))'));
 assert(run('ensure("today").every(id=>pantryMatch(id,pantryItems()).present.length)'));
 const candidates=run('menuCandidates()');
@@ -47,4 +51,28 @@ assert.notEqual(dishes.children[1],before[1]);
 for(const i of [0,2,3])assert.equal(dishes.children[i],before[i], 'Unchanged dish card remains mounted');
 assert(app.includes('photoFor(recipeId(plan,j),x.n)'), 'Weekly report uses the same photo mapping');
 assert(html.includes('id="prefIngredients"') && app.includes('availableIngredients:String(raw.availableIngredients'));
-console.log('Passed: 1000 recipe photos, pantry ranking, no-soup menus, legacy history, and single-card update');
+assert(/<div class="actions">[^\n]*id="usePantry"/.test(html), 'Pantry action is on the main menu');
+const fields = new Map();
+function field(id){
+  if(!fields.has(id)){
+    const flags=new Set(id==='#settingsPanel'?['hidden']:[]);
+    fields.set(id,{contains:target=>target===id,classList:{contains:key=>flags.has(key),add:key=>flags.add(key),remove:key=>flags.delete(key),toggle:key=>flags.has(key)?flags.delete(key):flags.add(key)},focus(){}});
+  }
+  return fields.get(id);
+}
+let clickOutside;
+const ui={document:{addEventListener(name,fn){assert.equal(name,'click');clickOutside=fn;}},$:field,viewDate:'today',todayKey:'today',state:{plans:{},aiInfo:{}},loadPrefs(){},savePrefs(){throw Error('Home action must use saved settings');},save(){},update(){},toast(){},pantryItems:()=>['鸡腿肉'],makePlan:()=>['meat:0','side:26','side:27','veg:0']};
+vm.runInNewContext(block("$('#settingsToggle').onclick=","$('#prev').onclick="),ui);
+field('#settingsToggle').onclick();
+assert(!field('#settingsPanel').classList.contains('hidden'));
+clickOutside({target:'#settingsPanel'});
+assert(!field('#settingsPanel').classList.contains('hidden'));
+clickOutside({target:'outside'});
+assert(field('#settingsPanel').classList.contains('hidden'));
+field('#usePantry').onclick();
+assert.equal(ui.state.plans.today.length,4);
+ui.pantryItems=()=>[];
+field('#usePantry').onclick();
+clickOutside({target:'#usePantry'});
+assert(!field('#settingsPanel').classList.contains('hidden'));
+console.log('Passed: all recipe images, pantry ranking, no-soup menus, legacy history, single-card update, and settings interactions');
