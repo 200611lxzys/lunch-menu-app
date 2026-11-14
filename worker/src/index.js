@@ -56,7 +56,7 @@ function cleanCandidate(item) {
   const ingredients = safeText(item.ingredients, 800);
   const steps = safeText(item.steps, 1200);
   if (!id || ![...LEGACY_SLOTS, "mixed1", "mixed2"].includes(slot) || !name || !ingredients) return null;
-  return { id, slot, name, ingredients, steps };
+  return { id, slot, name, ingredients, steps, ingredientKeys: Array.isArray(item.ingredientKeys) ? item.ingredientKeys.slice(0, 16).map(key => safeText(key, 40)) : [] };
 }
 
 function containsForbidden(candidate, terms) {
@@ -176,6 +176,7 @@ export default {
     };
 
     const systemPrompt = [
+      "同餐不同菜的 ingredientKeys 不能重叠。猪里脊、梅花肉等属于同一个猪肉主料。",
       "你是家庭菜单搭配助手。只从传入的 candidates 中选菜，不能编造候选菜、ID、食材或做法。",
       "硬性遵守 allergies、dislikes 及 dailyWish 中明确写出的过敏和忌口；这些限制已由程序过滤候选，仍须再次检查。",
       "结合固定人数、口味及当天自然语言要求搭配，并尽量避开近期重复；当天描述中的过敏或忌口是硬约束。",
@@ -226,11 +227,16 @@ export default {
       if (selections.length !== 4) return responseJson({ error: "模型返回菜品数量不正确" }, 502, allowedOrigin);
       const usedSlots = new Set();
       const usedIds = new Set();
+      const usedIngredients = new Set();
       for (const selection of selections) {
         const candidate = byId.get(selection.slot + "|" + selection.id);
         if (!candidate || candidate.slot !== selection.slot || usedSlots.has(candidate.slot) || usedIds.has(candidate.id)) {
           return responseJson({ error: "模型返回了菜谱库以外或重复的菜" }, 502, allowedOrigin);
         }
+        if(candidate.ingredientKeys.some(key=>usedIngredients.has(key))) {
+          return responseJson({error:"推荐主料重复，请重试或使用按食材搭配"}, 422, allowedOrigin);
+        }
+        candidate.ingredientKeys.forEach(key=>usedIngredients.add(key));
         usedSlots.add(candidate.slot);
         usedIds.add(candidate.id);
       }
