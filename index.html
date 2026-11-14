@@ -189,8 +189,8 @@ function photoFor(id,name){
   const [slot,rawIndex]=id.split(':');
   const index=Number(rawIndex);
   if(index<originalCounts[slot])return recipePhoto(legacySlots.indexOf(slot),index,name);
-  const url='https://haohchifan-menu-gateway.pages.dev/images/recipes-v2/'+slot+'-'+index+'.jpg';
-  return '<img src="'+url+'" alt="'+name+'的食材图" loading="lazy" decoding="async" style="left:0;top:0;width:100%;height:100%;object-fit:cover">';
+  const url='https://haohchifan-menu-gateway.pages.dev/images/recipes-v3/'+slot+'-'+index+'.jpg';
+  return '<img src="'+url+'" alt="'+name+'的成品菜示意图" loading="lazy" decoding="async" style="left:0;top:0;width:100%;height:100%;object-fit:cover">';
 }
 
 function pantryItems(){
