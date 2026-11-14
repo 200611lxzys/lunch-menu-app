@@ -30,7 +30,7 @@ assert(run('Object.values(DB).flat().every(d=>d.i&&d.m)'));
 assert.equal(run('recipeId(ensure("old"),3)'),'soup:0');
 assert(run('photoFor("soup:0","旧菜单")').includes('<img '));
 assert(run('photoFor("meat:6","专属图片")').includes('/recipes-v1/meat-6.jpg'));
-assert(run('photoFor("side:26","新增菜")').includes('/recipes-v3/side-26.jpg'));
+assert(run('photoFor("side:26","新增菜")').includes('/recipes-v4/side-26.jpg'));
 const addedPhotos=run('Object.entries(DB).flatMap(([slot,rows])=>rows.slice(originalCounts[slot]).map((dish,i)=>photoFor(slot+":"+(i+originalCounts[slot]),dish.n)))');
 assert.equal(addedPhotos.length,896);
 assert.equal(new Set(addedPhotos.map(tag=>tag.match(/src="([^"]+)"/)[1])).size,896);
