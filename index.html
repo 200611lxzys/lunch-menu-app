@@ -206,13 +206,16 @@ const greens=/^(?:当季)?青菜$|^(?:小白菜|上海青|油菜|小油菜|菜�
 function matchesIngredient(needed,have){
   const name=cleanIngredient(needed);
   if(have==='青菜')return greens.test(name);
+  if(have==='辣椒')return /^(辣椒|干辣椒|青椒|小米椒|线椒)$/.test(name);
   if(name===have||name.startsWith(have)||have.startsWith(name))return true;
-  const groups={'鸡肉':/^鸡(胸|腿|翅|丁|片)/,'猪肉':/猪|里脊|梅花肉|肉末/,'牛肉':/牛/,'虾':/虾/,'鱼':/鱼/,'土豆':/马铃薯|洋芋/,'西红柿':/番茄/,'番茄':/西红柿/};
+  const groups={'羊肉':/羊肉|羊腿|羊排/,'鸡肉':/^鸡(胸|腿|翅|丁|片)/,'猪肉':/猪|排骨|梅花肉|五花肉|瘦肉末/,'牛肉':/牛肉|牛腩|牛柳|牛里脊|牛排/,'虾':/虾/,'鱼':/鱼/,'土豆':/马铃薯|洋芋/,'西红柿':/番茄/,'番茄':/西红柿/};
   return !!groups[have]?.test(name);
 }
 function pantryMatch(id,items){
   const required=mainIngredients(recipeFor(id));
-  const present=required.filter(name=>items.some(item=>matchesIngredient(name,item)));
+  const listed=recipeFor(id).i.split(/[、，；]/).map(cleanIngredient);
+  const relevant=[...new Set([...required,...listed.filter(name=>/^(辣椒|干辣椒|青椒|小米椒|线椒)$/.test(name))])];
+  const present=relevant.filter(name=>items.some(item=>matchesIngredient(name,item)));
   return {present,missing:required.filter(name=>!present.includes(name))};
 }
 function rankedDishes(ids,items){
@@ -254,21 +257,51 @@ function chooseDish(slot,excluded,previous){
   const best=ranked.filter(item=>item.score===ranked[0].score);
   return best[Math.floor(Math.random()*best.length)].id;
 }
+function makePantryPlan(items,previous,random){
+  // Keep several partial menus so a locally good dish cannot block a better full meal.
+  let partials=[{plan:[],keys:[],covered:[],missing:0,repeated:0,tie:0}];
+  for(const index of [3,0,1,2]){
+    const options=pools[slots[index]].map(id=>{
+      const match=pantryMatch(id,items);
+      return {id,keys:dishKeys(id),covered:items.filter(item=>match.present.some(name=>matchesIngredient(name,item))),
+        missing:match.missing.length,repeated:Number(id===previous[index]),tie:random()};
+    });
+    const next=[];
+    for(const meal of partials){
+      for(const option of options){
+        if(index===3&&items.includes('青菜')&&!option.covered.includes('青菜'))continue;
+        if(option.keys.some(key=>meal.keys.includes(key)))continue;
+        const plan=meal.plan.slice();
+        plan[index]=option.id;
+        const covered=[...new Set([...meal.covered,...option.covered])];
+        next.push({plan,covered,keys:[...meal.keys,...option.keys],missing:meal.missing+option.missing,
+          repeated:meal.repeated+option.repeated,tie:meal.tie+option.tie});
+      }
+    }
+    next.sort((a,b)=>b.covered.length-a.covered.length||a.missing-b.missing||a.repeated-b.repeated||a.tie-b.tie);
+    const seen=new Set();
+    partials=[];
+    for(const meal of next){
+      const signature=JSON.stringify([meal.keys.slice().sort(),meal.covered.slice().sort()]);
+      if(seen.has(signature))continue;
+      seen.add(signature);
+      partials.push(meal);
+      if(partials.length===24)break;
+    }
+  }
+  return partials[0]?.plan;
+}
 function makePlan(k,previous=[]){
   const random=previous.length?Math.random:rng(hash(k));
   const items=pantryItems();
+  if(items.length){
+    const pantryPlan=makePantryPlan(items,previous,random);
+    if(pantryPlan)return pantryPlan;
+  }
   const ranked=slots.map((slot,i)=>rankedDishes(pools[slot],items)
     .map(item=>({...item,tie:random(),same:item.id===previous[i]}))
     .sort((a,b)=>Number(a.same)-Number(b.same)||b.score-a.score||a.tie-b.tie));
-  const vegIndex=slots.indexOf('veg');
-  const useGreens=items.includes('青菜');
   const order=slots.map((_,index)=>index);
-  if(useGreens){
-    order.splice(vegIndex,1);
-    order.unshift(vegIndex);
-    const hasGreens=id=>pantryMatch(id,['青菜']).present.length>0;
-    ranked[vegIndex].sort((a,b)=>Number(hasGreens(b.id))-Number(hasGreens(a.id)));
-  }
   const plan=[];
   function fill(depth){
     if(depth===order.length)return true;
